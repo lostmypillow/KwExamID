@@ -3,7 +3,6 @@ from sqlalchemy import text
 from typing import Any
 import pathlib
 import os
-from fastapi import Depends
 from datetime import date
 connection_url = "mssql+aioodbc://testsql:test123456@192.168.2.8/JLL2?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
 async_engine = create_async_engine(
@@ -36,7 +35,9 @@ async def fetch_all_sql(command_name, **kwargs):
     async with async_session() as session:
         sql_command = await sql_from_file(command_name)
         result = await session.execute(text(sql_command), kwargs)
-        return result.fetchall()
+        all_results = result.fetchall()
+        return all_results
+        # return [dict(row) for row in all_results]
 
 
 async def update_failure(student_id):

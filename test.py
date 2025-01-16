@@ -1,15 +1,17 @@
 # from lib.extractor import Extractor
+from database.async_operations import fetch_all_sql
+import asyncio
+# load_dotenv()
 
-
-load_dotenv()
-
-from captcha_solver import CaptchaSolver
-c = CaptchaSolver()
-print("im clean")
+# from captcha_solver import CaptchaSolver
+# c = CaptchaSolver()
+# print("im clean")
 # print(os.environ)
 # import os
 # import asyncio
-# async def test():
+async def test():
+    result = await fetch_all_sql("get_all_students")
+    print(result)
 #     mock_person = {
 #       "personal_id": "F132481419",
 #       "student_id": "090705",
@@ -22,4 +24,4 @@ print("im clean")
 #     extractor = Extractor(mock_person)
 #     await extractor.start()
 
-# asyncio.run(test())
+asyncio.run(test())

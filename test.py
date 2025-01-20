@@ -1,5 +1,5 @@
 # from lib.extractor import Extractor
-from database.async_operations import fetch_all_sql
+from database.async_operations import exec_sql, async_engine
 import asyncio
 # load_dotenv()
 
@@ -10,8 +10,9 @@ import asyncio
 # import os
 # import asyncio
 async def test():
-    result = await fetch_all_sql("get_all_students")
-    print(result)
+    all_students = await exec_sql("all", "get_all_students")
+    print(all_students)
+    await async_engine.dispose()
 #     mock_person = {
 #       "personal_id": "F132481419",
 #       "student_id": "090705",

@@ -3,7 +3,7 @@ import logging
 import sys
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from database.async_operations import fetch_all_sql, async_engine
+from database.async_operations import exec_sql, async_engine
 from dotenv import load_dotenv
 from .process_task import process_task
 
@@ -15,7 +15,7 @@ async def main():
     # Fetches all the student data. Once.
     #
     # This makes my whole application different from KwExamID_winforms which fetches the list once *for every student on the list*. Which I deem unnecessary and inefficient.
-    all_students = await fetch_all_sql("get_all_students")
+    all_students = await exec_sql("all", "get_all_students")
 
     # We process the every result tuple in list
     for student_tuple in all_students:

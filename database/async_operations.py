@@ -5,6 +5,7 @@ from os import getenv, path
 from dotenv import load_dotenv
 import pyodbc
 from typing import Literal
+from datetime import date
 
 pyodbc.pooling = False
 
@@ -97,3 +98,21 @@ async def exec_sql(
 
             # Returns the results as a list of dicts, or an empty list
             return result.mappings().all()
+
+
+async def update_failure(student_id):
+    await exec_sql(
+        "commit",
+        "update_exam_id",
+        student_id=student_id,
+        exam_id="查無考生 (資料錯誤)",
+        status_msg=date.today().strftime("%Y%m%d") + "資料錯誤")
+
+
+async def update_success(student_id, exam_id):
+    await exec_sql(
+        "commit",
+        "update_exam_id",
+        student_id=student_id,
+        exam_id=exam_id,
+        status_msg=date.today().strftime("%Y%m%d"))

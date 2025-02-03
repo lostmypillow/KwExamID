@@ -1,13 +1,17 @@
+print("Initializing KwExamID...")
 import asyncio
 import logging
 import sys
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 from database.async_operations import exec_sql, async_engine
 from dotenv import load_dotenv
-from .process_task import process_task
+from process_task import process_task
+from tqdm.asyncio import tqdm
+from results import succeeded_tasks, failed_list, failed_tasks, total_tasks
+from pprint import pprint
 
 async def main():
+    global succeeded_tasks, failed_list, failed_tasks, total_tasks
 
     # Creates an asyncio Queue (different from normal Python built-in queue)
     student_queue = asyncio.Queue()
@@ -15,8 +19,9 @@ async def main():
     # Fetches all the student data. Once.
     #
     # This makes my whole application different from KwExamID_winforms which fetches the list once *for every student on the list*. Which I deem unnecessary and inefficient.
+    print("Adding students from database to queue...", end="")
+    # TODO Test with real student data
     all_students = await exec_sql("all", "get_all_students")
-
     # We process the every result tuple in list
     for student_tuple in all_students:
 
@@ -49,22 +54,27 @@ async def main():
             # Put the student in the asyncio Queue
             await student_queue.put(student_dict)
 
-    # Semaphore to limit concurrent browsers
-    semaphore = asyncio.Semaphore(4)
+    print("Done!")
+    total_tasks = student_queue.qsize()
+    print("Starting queue...")
+    # Process each student one after the other
+    while not student_queue.empty():
+        student = await student_queue.get()
+        with tqdm(total=11, desc=f"{student['student_id']} {student['name']}") as progress_bar:
+            await process_task(student, progress_bar)
 
-    # Create a ThreadPoolExecutor for captcha-solving
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        # Create and run tasks
-        tasks = [asyncio.create_task(process_task(
-            student_queue, semaphore, executor)) for _ in range(4)]
-
-        # Wait for the queue to be fully processed
-        await student_queue.join()
-
-        # Cancel any leftover tasks
-        for task in tasks:
-            task.cancel()
-    await async_engine.dispose()
+        student_queue.task_done()  # Mark the task as done
+    await student_queue.join()
+    print("Done!")
+    if async_engine:
+        print("Disposing async SQLAlchemy engine...", end="")
+        await async_engine.dispose()
+        print("Done!")
+    print("[REPORT]")
+    print(f"Succeeded: {succeeded_tasks}/{total_tasks}")
+    print(f"Failed: {len(failed_list)}/{total_tasks}")
+    print(f"Failed tasks:")
+    pprint(failed_list)
 
 
 # Load .env values
@@ -73,13 +83,14 @@ load_dotenv()
 # Disable logging for the goddamn annoying transformer and tensorflow  console output
 logging.disable(logging.WARNING)
 
-# Ensures browsers for playwright are installed (for some reason it doesn't automatically do thaat when we pip install)
+print("Ensuring browsers for playwright are installed...", end="")
+# for some reason it doesn't automatically do that when we pip install for the first time
 subprocess.run(
     [sys.executable, "-m", "playwright", "install"],
     check=True,
 )
+print("Done!")
 
 
 # Run the main function
 asyncio.run(main())
-

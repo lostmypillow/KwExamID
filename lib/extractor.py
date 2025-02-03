@@ -1,7 +1,7 @@
 from playwright.async_api import async_playwright, Playwright
 import os
 import time
-from .captcha_solver import CaptchaSolver
+from ..captcha_solver import CaptchaSolver
 from database.async_operations import update_failure, update_success
 from datetime import date
 

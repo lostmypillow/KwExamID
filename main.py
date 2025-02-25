@@ -1,14 +1,15 @@
-print("Initializing KwExamID...")
-import asyncio
-import logging
-import sys
-import subprocess
-from database.async_operations import exec_sql, async_engine
-from dotenv import load_dotenv
-from process_task import process_task
-from tqdm.asyncio import tqdm
-from results import succeeded_tasks, failed_list, failed_tasks, total_tasks
 from pprint import pprint
+from results import succeeded_tasks, failed_list, failed_tasks, total_tasks
+from tqdm.asyncio import tqdm
+from process_task import process_task
+from dotenv import load_dotenv
+from database.async_operations import exec_sql, async_engine
+import subprocess
+import sys
+import logging
+import asyncio
+print("Initializing KwExamID...")
+
 
 async def main():
     global succeeded_tasks, failed_list, failed_tasks, total_tasks
@@ -22,40 +23,32 @@ async def main():
     print("Adding students from database to queue...", end="")
     # TODO Test with real student data
     all_students = await exec_sql("all", "get_all_students")
+    # print(all_students)
     # We process the every result tuple in list
-    for student_tuple in all_students:
+    for student_dict in all_students:
+        student_dict = dict(student_dict)
+        student_dict['personal_id'] = student_dict['身分證']
+        student_dict['student_id'] = student_dict['學號']
+        student_dict['name'] = student_dict['姓名']
+        student_dict["year"] = str(student_dict["生日"].year - 1911)
 
-        # keys for the future constructed dictionary
-        data_keys = ('personal_id',
-                     'student_id',
-                     'name',
-                     'year',
-                     'month',
-                     'day')
+        # Convert the months from like 9 to 09
+        student_dict["month"] = str(student_dict["生日"].month).zfill(2)
 
-        # If the number of keys match the number of values in the tuples, we move on to creation of dict
-        if len(data_keys) == len(student_tuple):
+        # Convert the days from like 9 to 09
+        student_dict["day"] = str(student_dict["生日"].day).zfill(2)
+        del student_dict['身分證']
+        del student_dict['學號']
+        del student_dict['姓名']
+        del student_dict["生日"]
 
-            # this constructs the dictionary student_tuple and the data_keys tuple...with the data keys as keys, student tuple as values
-            student_dict = {
-                data_keys[i]: student_tuple[i]
-                for i, _ in enumerate(student_tuple)
-            }
-
-            # we go back and convert all the years to 民國 years
-            student_dict["year"] = str(student_dict["year"] - 1911)
-
-            # Convert the months from like 9 to 09
-            student_dict["month"] = str(student_dict["month"]).zfill(2)
-
-            # Convert the days from like 9 to 09
-            student_dict["day"] = str(student_dict["day"]).zfill(2)
-
-            # Put the student in the asyncio Queue
-            await student_queue.put(student_dict)
+        # Put the student in the asyncio Queue
+        await student_queue.put(student_dict)
 
     print("Done!")
     total_tasks = student_queue.qsize()
+    print(f"Queue size before processing: {student_queue.qsize()}")
+
     print("Starting queue...")
     # Process each student one after the other
     while not student_queue.empty():
@@ -63,7 +56,7 @@ async def main():
         with tqdm(total=11, desc=f"{student['student_id']} {student['name']}") as progress_bar:
             await process_task(student, progress_bar)
 
-        student_queue.task_done()  # Mark the task as done
+            student_queue.task_done()  # Mark the task as done
     await student_queue.join()
     print("Done!")
     if async_engine:
@@ -71,7 +64,7 @@ async def main():
         await async_engine.dispose()
         print("Done!")
     print("[REPORT]")
-    print(f"Succeeded: {succeeded_tasks}/{total_tasks}")
+    print(f"Succeeded: {total_tasks - len(failed_list)}/{total_tasks}")
     print(f"Failed: {len(failed_list)}/{total_tasks}")
     print(f"Failed tasks:")
     pprint(failed_list)

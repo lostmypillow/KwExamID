@@ -67,7 +67,7 @@ async def process_task(student: dict, progress_bar: tqdm_asyncio):
                     captcha_attempts += 1
                 else:
                     # await update_failure(student.student_id)
-                    # print(f"Extraction failure: {student['name']}")
+                    print(f"Extraction failure: {student['name']}")
                     
                     failed_list.append(student)
                     break
@@ -135,7 +135,7 @@ async def process_task(student: dict, progress_bar: tqdm_asyncio):
                 exam_id = await page.locator(
                     'div.col-6.col-md-9.p-3.border').nth(1).inner_text()
                 # Update database of success and extracted exam ID
-                # await update_success(student.student_id, exam_id)
+                await update_success(student['student_id'], exam_id)
                 succeeded_tasks += 1
                 progress_bar.update(1)
                 # print(f"Extraction success: {student ['student_id']} {student['name']}, exam ID: {exam_id}")
@@ -145,7 +145,7 @@ async def process_task(student: dict, progress_bar: tqdm_asyncio):
             # If any of the conditions is not true...
             else:
                 # Inform database of failure to extract info
-                # await update_failure(student.student_id)
+                await update_failure(student['student_id'])
                 
                 failed_list.append(student)
                 progress_bar.update(1)

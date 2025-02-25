@@ -1,8 +1,8 @@
 SELECT
-    身分證,
+    A.身分證,
     A.學號,
-    姓名,
-    生日
+    A.姓名,
+    A.生日
 FROM
     學生資料 AS A
     LEFT JOIN [學生大考資料] AS B ON A.[學號] = B.[學號]
@@ -16,8 +16,8 @@ WHERE
         WHERE
             (
                 班級名稱 LIKE '%' + CAST((YEAR(GETDATE()) - 1912) AS VARCHAR) + '%高三數學班%'
-                OR 班級名稱 LIKE '%' + CAST((YEAR(GETDATE()) - 1913) AS VARCHAR) + '%高二數學班%'
-                OR 班級名稱 LIKE '%' + CAST((YEAR(GETDATE()) - 1914) AS VARCHAR) + '%高一數學班%'
+                -- OR 班級名稱 LIKE '%' + CAST((YEAR(GETDATE()) - 1913) AS VARCHAR) + '%高二數學班%'
+                -- OR 班級名稱 LIKE '%' + CAST((YEAR(GETDATE()) - 1914) AS VARCHAR) + '%高一數學班%'
             )
     )
     AND isnull(B.學測准考證, '') = ''
@@ -27,7 +27,7 @@ WHERE
     )
     AND 身分證 <> ''
 ORDER BY
-    學號;
+    A.學號;
 
     
     

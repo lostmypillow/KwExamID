@@ -1,0 +1,102 @@
+
+
+
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker</title>
+    <link rel="stylesheet" href="pico.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .progress-container {
+            width: 80%;
+            max-width: 600px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        progress {
+            width: 100%;
+            height: 30px;
+            margin-top: 10px;
+        }
+
+        .task-status {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Task Progress Tracker</h1>
+    <div class="progress-container">
+        <div id="task-info" class="task-status">Waiting for task to start...</div>
+        <progress id="progress-bar" value="0" max="100"></progress>
+    </div>
+
+    <script>
+        // Connect to the WebSocket server
+        const socket = new WebSocket("ws://localhost:8000/ws");
+
+        // DOM elements
+        const progressBar = document.getElementById("progress-bar");
+        const taskInfo = document.getElementById("task-info");
+
+        // Update the progress bar and task status based on WebSocket messages
+        socket.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+
+            if (message.type === "progress") {
+                // Update progress bar value and text
+                const percentage = message.progress * 100;
+                progressBar.value = percentage;
+                taskInfo.innerText = `Processing: ${message.student_id} - ${message.student_name}`;
+            } else if (message.type === "done") {
+                // Update task status when done
+                progressBar.value = 100;
+                taskInfo.innerText = "Task completed successfully!";
+                taskInfo.classList.add("success");
+            } else if (message.type === "error") {
+                // Handle errors
+                progressBar.value = 100;
+                taskInfo.innerText = `Error with student ${message.student_id}: ${message.error_message}`;
+                taskInfo.classList.add("error");
+            }
+        };
+
+        socket.onopen = function() {
+            taskInfo.innerText = "Connected to server, waiting for tasks...";
+        };
+
+        socket.onclose = function() {
+            taskInfo.innerText = "Disconnected from server.";
+        };
+
+        socket.onerror = function(error) {
+            taskInfo.innerText = `WebSocket Error: ${error.message}`;
+            taskInfo.classList.add("error");
+        };
+    </script>
+
+</body>
+</html>

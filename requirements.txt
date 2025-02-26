@@ -10,6 +10,8 @@ colorama==0.4.6
 dnspython==2.7.0
 email_validator==2.2.0
 exceptiongroup==1.2.2
+fastapi==0.115.8
+fastapi-cli==0.0.7
 filelock==3.16.1
 flatbuffers==24.12.23
 fsspec==2024.12.0
@@ -78,6 +80,7 @@ transformers==4.47.1
 typer==0.15.1
 typing_extensions==4.12.2
 urllib3==2.3.0
+uvicorn==0.34.0
 watchfiles==1.0.3
 websockets==14.1
 Werkzeug==3.1.3
